@@ -4,8 +4,8 @@ import logging
 import json
 
 
-from fastapi import APIRouter,Depends, HTTPException , UploadFile, File
-from fastapi.responses import streamingResponse
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 from pydantic import BaseModel
 
@@ -28,15 +28,15 @@ class CreateJobResponse(BaseModel):
     job_id: str
 
 class ThumbnailResponse(BaseModel):
-    id: int
+    id: str
     style_name: str
     status: str
     imagekit_url: str | None = None
     error_message: str | None = None
-    variants: str | None = None
+    variants: dict | None = None
 
 class JobResponse(BaseModel):
-    id: int
+    id: str
     prompt: str
     num_thumbnails: int
     headshot_url: str
@@ -45,7 +45,9 @@ class JobResponse(BaseModel):
 
 @router.post("/upload-headshot")
 async def upload_headshot(file: UploadFile = File(...)):
-    contents = await file.read()  # Read the file to ensure it's available for upload
+    contents = await file.read()
+    if not contents:
+        raise HTTPException(status_code=400, detail="Please upload a non-empty image.")
 
     upload_url = upload_file(
         file_bytes=contents,
@@ -70,6 +72,7 @@ async def create_job(
         headshot_url=request.headshot_url,
     )
     session.add(job)
+    session.flush()
 
     styles = STYLE_ORDER[:request.num_thumbnails]
     for style in styles:
@@ -139,7 +142,7 @@ async def stream_job(job_id: str):
                             "imagekit_url": t.imagekit_url,
                             "variants": variants
                         })
-                        yield f"event: thumbnail_ready\n data:{data}\n\n"
+                        yield f"event: thumbnail_ready\ndata:{data}\n\n"
                         sent_thumbnails.add(t.id)
 
                     elif t.status == "failed":
@@ -148,18 +151,18 @@ async def stream_job(job_id: str):
                             "style_name": t.style_name,
                             "error": t.error_message
                         })
-                        yield f"event: thumbnail_failed\n data:{data}\n\n"
+                        yield f"event: thumbnail_failed\ndata:{data}\n\n"
                         sent_thumbnails.add(t.id)
 
                 all_done = all(t.status in ["uploaded", "failed"] for t in thumbnails)
                 if all_done and len(sent_thumbnails) == len(thumbnails):
                     data = json.dumps({"job_id": job_id, "status": job.status})
-                    yield f"event: job_completed\n data:{data}\n\n"
+                    yield f"event: job_completed\ndata:{data}\n\n"
                     return
                 
             await asyncio.sleep(1.5)  # Poll every 2 seconds.
 
-    return streamingResponse(
+    return StreamingResponse(
         event_generator(), 
         media_type="text/event-stream",
         headers={

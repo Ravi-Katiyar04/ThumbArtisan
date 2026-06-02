@@ -67,7 +67,7 @@ async def generate_single_thumbnail(thumbnail_id: str, prompt: str, headshot_url
         logger.error(f"Error generating thumbnail {thumbnail_id}: {e}")
         with Session(engine) as session:
             thumb = session.get(Thumbnail, thumbnail_id)
-            thumb.status = "error"
+            thumb.status = "failed"
             thumb.error_message = str(e)[:500]  # Truncate error message to fit in DB
             session.add(thumb)
             session.commit()
