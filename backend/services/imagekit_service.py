@@ -3,14 +3,14 @@ from imagekitio import ImageKit
 from config import IMAGEKIT_PUBLIC_KEY, IMAGEKIT_PRIVATE_KEY, IMAGEKIT_URL_ENDPOINT
 
 imagekit = ImageKit(
-    private_key=IMAGEKIT_PRIVATE_KEY,
+    private_key=IMAGEKIT_PRIVATE_KEY
 )
 
 def upload_file(file_bytes: bytes, file_name: str, folder: str, content_type: str = "image/jpeg") -> str:
     """upload image"""
     try:
-        response = imagekit.upload_file(
-            file=(file_bytes, file_name, content_type),
+        response = imagekit.files.upload(
+            file=file_bytes,
             file_name=file_name,
             folder=folder,
             is_private_file=False,
