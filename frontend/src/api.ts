@@ -49,7 +49,6 @@ export async function subscribeToJob(jobId: number, {onThumbnailReady, onThumbna
         onError(new Error(`EventSource error for job ${jobId}: ${error}`));
     };
 }
-
 export async function getJobStatus(jobId: number): Promise<string> {
     const response = await fetch(`${API_BASE_URL}/job-status/${jobId}`);
     if (!response.ok) {

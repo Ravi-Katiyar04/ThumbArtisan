@@ -1,9 +1,9 @@
 import base64
 from openai import AsyncOpenAI
 
-from config import OPENAI_API_KEY
+from config import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
 
-client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+client = AsyncOpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
 
 async def generate_thumbnail(prompt: str, style_prompt: str, headshot_url: str) -> bytes:
     """Generate thumbnail image using OpenAI's DALL-E API."""
@@ -16,7 +16,7 @@ async def generate_thumbnail(prompt: str, style_prompt: str, headshot_url: str) 
     )
     
     response = client.responses.create(
-        model="gpt-4.1-mini",
+        model=OPENAI_MODEL,
         input=[
             {
                 "role": "user",
